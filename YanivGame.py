@@ -6,7 +6,6 @@ def sort_by_rank(card):
     return card.rank
 
 def sort_hand(hand):
-    print(type(hand))
     hand.sort(key=lambda c: c.rank)
 
 
@@ -59,21 +58,14 @@ class YanivGame:
         return s
 
         
-    def make_turn(self, cardsToDrop, cardToPickup=0):
+    def make_turn(self, cardsToDrop, pickupFromDeck=False, cardToPickup=None):
         # TODO validate turn
         assert(isinstance(cardsToDrop, list))
         self.top = cardsToDrop
         self.open = cardsToDrop + self.open
 
         # Remove cards from the hand
-        print(id(self.handTwo))
         hand = self.__get_current_hand()
-        print(id(hand))
-
-        assert(id(self.handTwo) == id(hand))
-
-        print("before")
-        print_card_list(self.handTwo)
 
         for cardToDrop in cardsToDrop:
             for cardInHand in hand:
@@ -81,44 +73,24 @@ class YanivGame:
                     hand.remove(cardInHand)
                     break
 
-        print("after drop")
-        print_card_list(self.handTwo)
-
         # Pickup card
-        if (cardToPickup == 0):
+        if (pickupFromDeck):
             hand.append(self.deck.pop(0))
         else:
             hand.append(cardToPickup)
 
-        print("after pickup")
-        print_card_list(self.handTwo)
-
         # update turn
         self.turn = (self.turn + 1) % 2
 
-        # self.handOne.sort(key=sort_by_rank)
-        # self.handTwo.sort(key=sort_by_rank)
         # sort the hands
-        print("handOne")
-        print_card_list(self.handOne)
-        print("handTwo")
-        print_card_list(self.handTwo)
-        print([c.rank for c in self.handOne])
-        print([c.rank for c in self.handTwo])
-        print("sorting 1")
         sort_hand(self.handOne)
-        print("sorting 2")
         sort_hand(self.handTwo)
-        print("handOne")
-        print_card_list(self.handOne)
-        print("handTwo")
-        print_card_list(self.handTwo)
 
 
     def show(self):
         # TODO validate turn
-        hand_one_sum = get_hand_sum(self.handOne)
-        hand_two_sum = get_hand_sum(self.handTwo)
+        hand_one_sum = self.get_hand_sum(self.handOne)
+        hand_two_sum = self.get_hand_sum(self.handTwo)
 
 
         print("Player 1: " + str(hand_one_sum))

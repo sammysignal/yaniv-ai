@@ -32,7 +32,9 @@ def get_cards_by_shorthand(hand, shorthand):
     return cards
 
 def make_computer_turn(game):
-    game.make_turn([game.handOne[0]])
+    print("making computer turn:")
+    game.make_turn([game.handOne[0]], True)
+    return False
 
 def make_human_turn(game):
     hand = game.handTwo
@@ -61,7 +63,7 @@ def make_human_turn(game):
         if not cards_to_drop == []:
             break
 
-    cards_to_pickup = 0
+    cards_to_pickup = []
     pickup_string = ''
     while (True):
         pickup_string = input("Choose card to pickup (or enter to draw from the top of the deck): ")
@@ -71,7 +73,10 @@ def make_human_turn(game):
         if not cards_to_pickup == []:
             break
 
-    game.make_turn(cards_to_drop, cards_to_pickup[0])
+    if cards_to_pickup == []:
+        game.make_turn(cards_to_drop, True)
+    else:
+        game.make_turn(cards_to_drop, False, cards_to_pickup[0])
 
     return False
 
