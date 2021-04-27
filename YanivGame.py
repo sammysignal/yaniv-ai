@@ -56,7 +56,6 @@ class YanivGame:
         # TODO validate turn
         assert(isinstance(cardsToDrop, list))
 
-        self.top = cardsToDrop
         self.open = cardsToDrop + self.open
 
         # Remove cards from the hand
@@ -82,6 +81,9 @@ class YanivGame:
 
         # update turn
         self.turn = (self.turn + 1) % 2
+
+        # update top cards
+        self.top = cardsToDrop
 
         # sort the hands
         sort_hand(self.handOne)
