@@ -1,6 +1,6 @@
 from deck_of_cards import deck_of_cards
 
-from helpers import print_card_list
+from helpers import *
 
 def sort_by_rank(card):
     return card.rank
@@ -9,7 +9,7 @@ def sort_hand(hand):
     hand.sort(key=lambda c: c.rank)
 
 
-# Two-player yaniv
+# Two-player yaniv. This class controls the state of the game. play.py decides which turns to make
 class YanivGame:
 
     def __init__(self):
@@ -51,16 +51,11 @@ class YanivGame:
             hand = self.handTwo
         return hand
 
-    def get_hand_sum(self, hand):
-        s = 0
-        for card in hand:
-            s = s + card.value
-        return s
-
         
     def make_turn(self, cardsToDrop, pickupFromDeck=False, cardToPickup=None):
         # TODO validate turn
         assert(isinstance(cardsToDrop, list))
+
         self.top = cardsToDrop
         self.open = cardsToDrop + self.open
 
@@ -75,6 +70,12 @@ class YanivGame:
 
         # Pickup card
         if (pickupFromDeck):
+            # if no more cards, reset the discarded cards
+            if len(self.deck) == 0:
+                new_deck = deck_of_cards.DeckOfCards()
+                new_deck.deck = self.open
+                self.deck = new_deck.shuffle_deck()
+
             hand.append(self.deck.pop(0))
         else:
             hand.append(cardToPickup)
@@ -86,16 +87,16 @@ class YanivGame:
         sort_hand(self.handOne)
         sort_hand(self.handTwo)
 
+        return 0
+
 
     def show(self):
         # TODO validate turn
-        hand_one_sum = self.get_hand_sum(self.handOne)
-        hand_two_sum = self.get_hand_sum(self.handTwo)
-
+        hand_one_sum = get_hand_sum(self.handOne)
+        hand_two_sum = get_hand_sum(self.handTwo)
 
         print("Player 1: " + str(hand_one_sum))
         print("Player 2: " + str(hand_two_sum))
-
 
         if (hand_one_sum < hand_two_sum):
             print("Player 1 wins!!")
