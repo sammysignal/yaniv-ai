@@ -20,7 +20,6 @@ def make_human_turn(game):
     print("top cards:")
     print_card_list(game.top)
 
-
     hand_sum = get_hand_sum(hand)
 
     if (hand_sum <= 7):
