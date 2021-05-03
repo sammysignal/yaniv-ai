@@ -3,7 +3,6 @@ from itertools import combinations, chain
 from deck_of_cards import deck_of_cards
 
 
-
 # 0=spades, 1=hearts, 2=diamonds, 3=clubs
 SUITS = ["S", "H", "D", "C"]
 
