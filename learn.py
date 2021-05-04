@@ -1,4 +1,4 @@
-import pickle, random
+import pickle, random, sys
 from deck_of_cards import deck_of_cards
 
 from YanivGame import YanivGame
@@ -7,12 +7,28 @@ from helpers import *
 
 ### This class is responsible for executing a Q-Learning algorithm and devloping a gameplay policy.
 
+###  Run formats  ###
+## python learn.py learn
+#    - start learning, learn default number of games
+#
+## python learn.py continue 100
+#    - continue learning where it left off, with the number of games to learn
+#
+## python learn.py play
+#    - Play against the trained model
+#
+
+values = {}
+
+PICKLE_FILE = "Q_Values.p"
+
+
 # Game state encodes the state of the game right after making your turn.
 # State dimenstions to consider in the future:
 #   - Number of cards in opponent's hand
 # 7280
 GAME_STATE_KEY_OPTIONS = [
-    range(1, 8),   # number of cards in hand
+    range(1, 8),  # number of cards in hand
     range(1, 13), # Sum group of cards in my hand (1,2,3,4,5,6,7,8-9,10-12,13-16,17-25,26+)
     range(2),     # Did we show our cards this turn
 ]
@@ -20,10 +36,8 @@ GAME_STATE_KEY_OPTIONS = [
 GAMMA = 0.99
 LEARNING_RATE = 0.1
 
-GAMES = 1
-
-
-values = {}
+# Default games to learn
+GAMES = 10
 
 class SAR:
     # Define an action on a hand. Defaults to picking up from the top of the deck.
@@ -39,6 +53,12 @@ class SAR:
 
         # R/V
         self.expected_value = expected_value
+
+def set_key_value(key, value):
+    global values
+    if value > 0.001:
+        print("setting key: " + key + " with value: " + str(value))
+    values[key] = value
 
 # y = (-1/(games/2)) *x + 1
 # y = 1 - x(2/games)
@@ -56,6 +76,7 @@ def noise(games_played):
     return 1 - games_played*(float(2)/GAMES)
 
 def initialize_state():
+    global values
     """
     Initialize state dictionary to zero (or custom values)
     """
@@ -91,6 +112,8 @@ def get_state_key_for_game(hand, show=True):
 # Future states includes all possible cards to be picked up from the top or the the deck, but only gives expectation
 # for state after picking up from deck.
 def get_possible_actions(game):
+    global values
+
     hand = game._get_current_hand()
     top_cards = game.top
 
@@ -152,6 +175,8 @@ def get_possible_actions(game):
 
 
 def make_move_and_learn(game, games_played):
+    global values
+
     # execute a policy based on the values and gamma
     # V = Max(current reward + gamma*Sum(over each P(next state given current state)*V(next state)))
     # V = Max_a(gamma*Sum(over each P(next state given current state)*V(next state)))
@@ -171,15 +196,14 @@ def make_move_and_learn(game, games_played):
     current_hand = game._get_current_hand()
 
     best_action = random.choice(sars)
-    largest_expected_value = 0
-    for sar in sars:
-        # hand, dropped_cards, pickup_from_deck, card_to_pickup_from_top, show, expected_value
-        if (sar.expected_value > largest_expected_value):
-            best_action = sar
-            largest_expected_value = sar.expected_value
-
-
-    # max_future_expected_value = 0
+    if random.random() > probability_of_random_move:
+        # If we're not doing a random move, find the best move.
+        largest_expected_value = 0
+        for sar in sars:
+            # hand, dropped_cards, pickup_from_deck, card_to_pickup_from_top, show, expected_value
+            if (sar.expected_value > largest_expected_value):
+                best_action = sar
+                largest_expected_value = sar.expected_value
 
     if best_action.show:
         winner = game.show()
@@ -189,7 +213,9 @@ def make_move_and_learn(game, games_played):
             old_value = values[key]
 
             # !!!! Do the thing !!!!
-            values[key] = old_value + LEARNING_RATE*(GAMMA*1 - old_value)
+            new_value = old_value + LEARNING_RATE*(GAMMA*1 - old_value)
+            set_key_value(key, new_value)
+
         return
 
     # Make move and learn:
@@ -197,7 +223,8 @@ def make_move_and_learn(game, games_played):
     old_value = values[key]
 
     # !!!! Do the thing !!!!
-    values[key] = old_value + LEARNING_RATE*(GAMMA*best_action.expected_value - old_value)
+    new_value = old_value + LEARNING_RATE*(GAMMA*best_action.expected_value - old_value)
+    set_key_value(key, new_value)
 
     if best_action.pickup_from_deck:
         game.make_turn(best_action.dropped_cards)
@@ -207,22 +234,57 @@ def make_move_and_learn(game, games_played):
     # Recurse
     make_move_and_learn(game, games_played)
 
-def main():
-    # Initialize all values to zero
-    initialize_state()
+def learn(games_to_play=GAMES, start=True):
+    global values
+
+    if start:
+        # Initialize all values to zero
+        initialize_state()
+    else:
+        # If continuation, load pickle file into values
+        values = pickle.load(open(PICKLE_FILE, "rb" ))
 
     print("Initialized values to zero.")
     print("Values size is " + str(len(values)))
 
-    # while true
-        # get starting value (which also plays a game out)
-        # tick
     i = 0
-    while i < GAMES:
+    while i < games_to_play:
         game = YanivGame()
         make_move_and_learn(game, i)
         i = i + 1
 
+    # Write dictionary to a pickle file
+    pickle.dump(values, open(PICKLE_FILE, "wb" ))
+
+
+def print_usage():
+    print("Usage: python learn.py <flag>")
+    print("Flags:")
+    print("       learn:      Start learning")
+    print("       continue n: Continue learning with an additional n games")
+    print("       play:       Play against the trained model")
 
 if __name__ == '__main__':
-    main()
+    ## python learn.py learn
+    #    - start learning, learn default number of games
+
+    ## python learn.py continue 100
+    #    - continue learning where it left off, with the number of games to learn
+
+    ## python learn.py play
+    #    - Play against the trained model
+    if len(sys.argv) >= 2:
+        flag = sys.argv[1]
+        if flag == "learn":
+            learn()
+        elif flag == "continue":
+            n_games = int(sys.argv[2])
+            learn(n_games, False)
+        elif flag == "play":
+            print("Not implemented")
+        else:
+            print_usage()
+    else:
+        print_usage()
+
+            
