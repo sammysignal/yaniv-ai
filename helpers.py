@@ -10,6 +10,7 @@ def sort_by_rank(card):
     return (100*card.rank) + card.suit
 
 def sort_hand(hand):
+    # print_card_list(hand)
     hand.sort(key=sort_by_rank)
 
 def powerset(iterable, min_size):
@@ -80,7 +81,7 @@ def validate_cards_to_drop(cards):
             continue
         else:
             return False
-    
+
     return True
 
 # get all contiguous subsequences, from: https://stackoverflow.com/questions/41576911/list-all-contiguous-sub-arrays
@@ -126,7 +127,7 @@ def get_possible_cards_to_drop(hand):
 
             found_previous_card = True
             previous_card = card
-    
+
         if (len(current_sequence) >= 3):
             subsequences = get_possible_subsequences(current_sequence)
             cards_to_drop = cards_to_drop + subsequences
@@ -159,7 +160,7 @@ def get_possible_cards_to_drop(hand):
 
             found_previous_card = True
             previous_card = card
-    
+
         if (len(current_pair) >= 2):
             all_combinations = powerset(current_pair, 2)
             for combo in all_combinations:
@@ -176,4 +177,18 @@ def get_hand_sum(hand):
     for card in hand:
         s = s + card.value
     return s
+
+# (1,2,3,4,5,6,7,8-9,10-12,13-16,17-25,26+)
+def get_sum_denomination(s):
+    if s <= 7:
+        return s
+    elif 8 <= s and s <= 9:
+        return 8
+    elif 10 <= s and s <= 12:
+        return 9
+    elif 13 <= s and s <= 16:
+        return 10
+    elif 17 <= s and s <= 25:
+        return 11
+    return 12
 

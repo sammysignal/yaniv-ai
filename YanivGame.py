@@ -54,8 +54,8 @@ class YanivGame:
             hand = self.handOne
         return hand
 
-        
-    def make_turn(self, cardsToDrop, pickupFromDeck=False, cardToPickup=None):
+
+    def make_turn(self, cardsToDrop, pickupFromDeck=True, cardToPickup=None):
         # TODO validate turn
         assert(isinstance(cardsToDrop, list))
 
@@ -63,6 +63,8 @@ class YanivGame:
 
         # Remove cards from the hand
         hand = self._get_current_hand()
+
+        assert(all([c in hand for c in cardsToDrop]))
 
         for cardToDrop in cardsToDrop:
             for cardInHand in hand:
@@ -115,7 +117,7 @@ class YanivGame:
         if (PRINT):
             print("Player 1: " + str(hand_one_sum))
             print("Player 2: " + str(hand_two_sum))
-            print("Player " + winner + " wins!!")
+            print("Player " + str(winner) + " wins!!")
 
         return winner
 
