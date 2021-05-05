@@ -3,6 +3,7 @@ from deck_of_cards import deck_of_cards
 
 from YanivGame import YanivGame
 from helpers import *
+from play import make_human_turn
 
 
 ### This class is responsible for executing a Q-Learning algorithm and devloping a gameplay policy.
@@ -34,7 +35,8 @@ GAME_STATE_KEY_OPTIONS = [
 ]
 
 GAMMA = 0.99
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.01
+ENABLE_NOISE = False
 
 # Default games to learn
 GAMES = 10
@@ -56,8 +58,8 @@ class SAR:
 
 def set_key_value(key, value):
     global values
-    if value > 0.001:
-        print("setting key: " + key + " with value: " + str(value))
+    # if value > 0.001:
+    #     print(key + ": " + '{:.2f}'.format(value))
     values[key] = value
 
 # y = (-1/(games/2)) *x + 1
@@ -66,6 +68,8 @@ def noise(games_played):
     """
     Noise represents the probability of making a random move.
     """
+    if not ENABLE_NOISE:
+        return 0
     # Linear fraction of games played:  0 -> 1; 50 -> 0.5; 100 -> 0
     #       return (float(GAMES - games_played) / GAMES)
 
@@ -234,6 +238,55 @@ def make_move_and_learn(game, games_played):
     # Recurse
     make_move_and_learn(game, games_played)
 
+
+def make_computer_turn(game):
+    global values
+
+    # execute a policy based on the values and gamma
+    sars = get_possible_actions(game)
+    current_hand = game._get_current_hand()
+
+    best_action = random.choice(sars)
+    # Find the best move.
+    largest_expected_value = 0
+    for sar in sars:
+        # hand, dropped_cards, pickup_from_deck, card_to_pickup_from_top, show, expected_value
+        if (sar.expected_value > largest_expected_value):
+            best_action = sar
+            largest_expected_value = sar.expected_value
+
+    if best_action.show:
+        winner = game.show()
+        if winner == game.turn + 1:
+            # we will have won
+            print("Computer wins")
+            print("Computer hand:")
+            print_card_list(current_hand)
+        return True
+
+    if best_action.pickup_from_deck:
+        game.make_turn(best_action.dropped_cards)
+    else:
+        game.make_turn(best_action.dropped_cards, best_action.pickup_from_deck, best_action.card_to_pickup)
+
+    print("(Computer has " + str(len(current_hand) - len(best_action.dropped_cards)) + " cards remaining)")
+    return False
+
+
+def play():
+    global values
+    values = pickle.load(open(PICKLE_FILE, "rb" ))
+
+    game = YanivGame(print=True)
+
+    # human is player 2, they go first.
+    done = make_human_turn(game)
+    while (done == False):
+        if (game.turn == 0):
+            done = make_computer_turn(game)
+        else:
+            done = make_human_turn(game)
+
 def learn(games_to_play=GAMES, start=True):
     global values
 
@@ -251,6 +304,7 @@ def learn(games_to_play=GAMES, start=True):
     while i < games_to_play:
         game = YanivGame()
         make_move_and_learn(game, i)
+        print("game ended in " + str(game.turn_count) + " turns")
         i = i + 1
 
     # Write dictionary to a pickle file
@@ -281,10 +335,8 @@ if __name__ == '__main__':
             n_games = int(sys.argv[2])
             learn(n_games, False)
         elif flag == "play":
-            print("Not implemented")
+            play()
         else:
             print_usage()
     else:
         print_usage()
-
-            

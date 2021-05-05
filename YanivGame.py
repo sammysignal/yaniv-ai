@@ -2,17 +2,16 @@ from deck_of_cards import deck_of_cards
 
 from helpers import *
 
-
-PRINT = False
-
-
 # Two-player yaniv. This class controls the state of the game. play.py decides which turns to make
 class YanivGame:
 
-    def __init__(self):
+    def __init__(self, print=False):
         # Hands
         self.handOne = []
         self.handTwo = []
+
+        # Counter for number of turns made (a turn is where both players have played)
+        self.turn_count = 0
 
         # player 1 = 0, player 2 = 1
         # Left of the dealer goes first
@@ -26,6 +25,9 @@ class YanivGame:
 
         # Shuffle a new deck of cards
         self.deck = deck_of_cards.DeckOfCards().shuffle_deck()
+
+        # By default, don't print game information
+        self.print = print
 
         # Deal 7 cards
         for i in range(7):
@@ -84,6 +86,12 @@ class YanivGame:
         else:
             hand.append(cardToPickup)
 
+
+        # update turn counter
+        if self.turn == 0:
+            # If it is player 1's turn which is now over, we can update
+            self.turn_count = self.turn_count + 1
+
         # update turn
         self.turn = (self.turn + 1) % 2
 
@@ -114,7 +122,7 @@ class YanivGame:
             else:
                 winner = 1
 
-        if (PRINT):
+        if (self.print):
             print("Player 1: " + str(hand_one_sum))
             print("Player 2: " + str(hand_two_sum))
             print("Player " + str(winner) + " wins!!")
